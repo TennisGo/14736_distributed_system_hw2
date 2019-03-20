@@ -327,7 +327,78 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply * A
 	return ok
 } 
 
-func 
+// leader send AppendEntries RPC to followers/candidates
+func (rf *Raft) sendAllAppendEntries() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	if rf.status == Leader {
+		for i := range rf.peers {
+			if i != rf.me {
+				tempArgs := AppendEntriesArgs{}
+				args := &tempArgs
+				args.Term = rf.currentTerm
+				args.LeaderId = rf.me
+				args.LeaderCommit = rf.commitIndex
+
+				args.PrevLogIndex = rf.nextIndex[i] - 1
+				if args.PrevLogIndex >= 0 {
+					args.PrevLogTerm = rf.logs[args.PrevLogIndex].Term
+				}
+				if rf.nextIndex[i] <= len(rf.logs) - 1 {
+					args.Entries = rf.logs[rf.nextIndex[i] :]
+				}
+				ok := rf.sendAppendEntries(i, args, &AppendEntriesReply{})
+
+				if ok {
+					go rf.handleAppendEntriesReply()
+				}
+			}
+		}
+	}   
+}
+
+func (rf *Raft) handleAppendEntries(reply AppendEntriesReply, peerId int) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	if reply.Term > rf.currentTerm {
+		rf.currentTerm = reply.Term
+		rf.state = FOLLOWER
+		rf.votedFor = -1
+		// reset timer
+		return
+	}
+
+	// if successful: update nextIndex and matchIndex for follower
+	if reply.Success {
+		rf.nextIndex[peerId] = reply.NextIndex  // ? Everything related to NextIndex needs to be reconsidered 
+		rf.matchIndex[peerId] = reply.NextIndex - 1
+	} else {
+		rf.nextIndex[peerId] = reply.NextIndex
+	}
+	
+	// if there exits an N such that N > commitIndex
+	// if a majority of matchIndex[i] >= N, log[N].term == currentTerm
+	// set commitIndex = N (commit logs)
+	count := 0
+	for N := rf.commitIndex; N < len(rf.logs) - 1; N++ {
+		
+		if count > len(rf.peers) / 2 {
+			rf.commitIndex = 
+			go rf.commitLogs
+		} else {
+			break
+		}
+		
+	} 
+
+	
+}
+
+func (rf *Raft) commitLogs() {
+
+}
 
 
 
