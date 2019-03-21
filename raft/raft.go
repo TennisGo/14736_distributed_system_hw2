@@ -268,7 +268,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.state = FOLLOWER
 		rf.currentTerm = args.Term
 		rf.votedFor = -1
-		rf.heartbeat <- true
+		rf.heartbeatCh <- true
 		
 		reply.Term = rf.currentTerm  // not meaningful
 		
@@ -335,7 +335,7 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply * A
 	return ok
 } 
 
-func (rf *Raft) handleAppendEntries(reply AppendEntriesReply, peerId int) {
+func (rf *Raft) handleAppendEntriesReply(reply AppendEntriesReply, peerId int) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
@@ -395,10 +395,12 @@ func (rf *Raft) sendAllAppendEntries() {
 				if rf.nextIndex[i] <= len(rf.logs) - 1 {
 					args.Entries = rf.logs[rf.nextIndex[i] :]
 				}
-				ok := rf.sendAppendEntries(i, args, &AppendEntriesReply{})
+				tempReply := AppendEntriesReply{}
+				replyPointer := &tempReply
+				ok := rf.sendAppendEntries(i, args, replyPointer)
 
 				if ok {
-					go rf.handleAppendEntriesReply()
+					go rf.handleAppendEntriesReply(tempReply, i)
 				}
 			}
 		}
