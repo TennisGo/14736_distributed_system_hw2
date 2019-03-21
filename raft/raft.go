@@ -381,23 +381,32 @@ func (rf *Raft) handleAppendEntries(reply AppendEntriesReply, peerId int) {
 	// if there exits an N such that N > commitIndex
 	// if a majority of matchIndex[i] >= N, log[N].term == currentTerm
 	// set commitIndex = N (commit logs)
-	count := 0
 	for N := rf.commitIndex; N < len(rf.logs) - 1; N++ {
-		
+		count := 0 
+		if rf.logs[N].Term == rf.currentTerm {
+			for i := range rf.peers {
+				if rf.matchIndex[i] >= N {
+					count++
+				}
+			}
+		}
 		if count > len(rf.peers) / 2 {
-			rf.commitIndex = 
-			go rf.commitLogs
+			rf.commitIndex = N
 		} else {
 			break
-		}
-		
-	} 
-
-	
+		}	
+	}
+	go rf.commitLogs
 }
 
 func (rf *Raft) commitLogs() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
+	for i := rf.lastApplied + 1; i <= rf.commitIndex; i++ {
+		rf.applyCh <- ApplyMsg{Index: i, Command: rf.logs[i].Command}
+	}
+	rf.lastApplied = rf.commitIndex 
 }
 
 
