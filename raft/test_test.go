@@ -12,7 +12,6 @@ import "testing"
 import "fmt"
 import "time"
 import "math/rand"
-import "sync"
 
 // The tester generously allows solutions to complete elections in one second
 // (much more than the paper's range of timeouts).
@@ -21,6 +20,7 @@ const RaftElectionTimeout = 1000 * time.Millisecond
 // * make_config definition in config.go 
 func TestInitialElection3A(t *testing.T) {
 	servers := 3
+	// * 
 	cfg := make_config(t, servers, false)
 	defer cfg.cleanup()
 

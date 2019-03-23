@@ -94,7 +94,7 @@ func (rf *Raft) GetState() (int, bool) {
 	term = rf.currentTerm
 	isleader = (rf.state == LEADER )
 
-	fmt.Printf("GetState: Peer Index: %d term: %d state: %s", rf.me, term, rf.state)
+	fmt.Printf("GetState: Peer Index: %d term: %d state: %d", rf.me, term, rf.state)
 	return term, isleader
 }
 
