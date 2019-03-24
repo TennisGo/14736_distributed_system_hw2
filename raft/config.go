@@ -184,8 +184,8 @@ func (cfg *config) cleanup() {
 
 // attach server i to the net.
 func (cfg *config) connect(i int) {
+	
 	// fmt.Printf("connect(%d)\n", i)
-
 	cfg.connected[i] = true
 
 	// outgoing ClientEnds
@@ -247,6 +247,7 @@ func (cfg *config) checkOneLeader() int {
 	for iters := 0; iters < 10; iters++ {
 		time.Sleep(500 * time.Millisecond)
 		leaders := make(map[int][]int)
+		// fmt.Printf("%d peers in total \n", cfg.n)
 		for i := 0; i < cfg.n; i++ {
 			if cfg.connected[i] {
 				if t, leader := cfg.rafts[i].GetState(); leader {
@@ -254,7 +255,7 @@ func (cfg *config) checkOneLeader() int {
 				}
 			}
 		}
-
+	
 		lastTermWithLeader := -1
 		for t, leaders := range leaders {
 			if len(leaders) > 1 {
@@ -280,8 +281,10 @@ func (cfg *config) checkTerms() int {
 		if cfg.connected[i] {
 			xterm, _ := cfg.rafts[i].GetState()
 			if term == -1 {
-				term = xterm
+				term = xterm 
+				fmt.Printf("term is %d \n", xterm)
 			} else if term != xterm {
+				fmt.Printf("term is %d \n", xterm)
 				cfg.t.Fatalf("servers disagree on term")
 			}
 		}
